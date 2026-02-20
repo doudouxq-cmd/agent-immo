@@ -1,0 +1,35 @@
+[
+  {
+    "id": "001",
+    "type": "Appartement",
+    "pieces": 4,
+    "surface": 65,
+    "prix": 399000,
+    "ville": "Lyon",
+    "quartier": "1er arrondissement",
+    "description": "Bel appartement lumineux place Sathonay.",
+    "disponible": true
+  },
+  {
+    "id": "002",
+    "type": "Appartement",
+    "pieces": 2,
+    "surface": 58,
+    "prix": 239000,
+    "ville": "Lyon",
+    "quartier": "1er arrondissement",
+    "description": "T2 dernier etage place Colbert.",
+    "disponible": true
+  },
+  {
+    "id": "003",
+    "type": "Appartement",
+    "pieces": 4,
+    "surface": 105,
+    "prix": 427000,
+    "ville": "Lyon",
+    "quartier": "9ème arrondissement",
+    "description": "T4 climatisé avec terrasse.",
+    "disponible": true
+  }
+]
