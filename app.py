@@ -41,7 +41,7 @@ conversations = {}
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('index.html', agent_id=os.getenv("ELEVENLABS_AGENT_ID"))
 
 @app.route('/chat', methods=['POST'])
 def chat():
