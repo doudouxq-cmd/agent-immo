@@ -51,25 +51,27 @@
         });
 
         async function toggleVoice() {
-            const btn = document.getElementById('voiceBtn');
-            if (conversation) {
-                await conversation.endSession();
-                conversation = null;
-                btn.textContent = '🎤 Parler à l\'agent';
-                btn.classList.remove('active');
-            } else {
-                try {
-                    await navigator.mediaDevices.getUserMedia({ audio: true });
-                    conversation = await window.ElevenLabsClient.Conversation.startSession({
-                        agentId: '{{ agent_id }}'
-                    });
-                    btn.textContent = '⏹ Arrêter la conversation';
-                    btn.classList.add('active');
-                } catch (e) {
-                    alert('Impossible d\'accéder au microphone.');
-                }
-            }
+    const btn = document.getElementById('voiceBtn');
+    if (conversation) {
+        await conversation.endSession();
+        conversation = null;
+        btn.textContent = '🎤 Parler à l\'agent';
+        btn.classList.remove('active');
+    } else {
+        try {
+            await navigator.mediaDevices.getUserMedia({ audio: true });
+            const { Conversation } = window.ElevenLabs;
+            conversation = await Conversation.startSession({
+                agentId: '{{ agent_id }}'
+            });
+            btn.textContent = '⏹ Arrêter la conversation';
+            btn.classList.add('active');
+        } catch (e) {
+            console.error(e);
+            alert('Erreur : ' + e.message);
         }
+    }
+}
 
         async function sendMessage() {
             const input = document.getElementById('input');
