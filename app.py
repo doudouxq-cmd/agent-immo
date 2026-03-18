@@ -5,6 +5,7 @@ import json
 from datetime import datetime
 from dotenv import load_dotenv
 from twilio.rest import Client as TwilioClient
+import requests
 
 load_dotenv()
 
@@ -19,6 +20,30 @@ def biens_en_texte():
         if b["disponible"]:
             texte += f"- {b['type']} {b['pieces']} pièces, {b['surface']}m², {b['prix']}€, {b['quartier']} {b['ville']}. {b['description']}\n"
     return texte
+
+def envoyer_email(to_email, to_name, subject, html_content):
+    try:
+        response = requests.post(
+            "https://api.brevo.com/v3/smtp/email",
+            headers={
+                "api-key": os.getenv("BREVO_API_KEY"),
+                "Content-Type": "application/json",
+            },
+            json={
+                "sender": {
+                    "name": os.getenv("SENDER_NAME", "Agence Immobilière"),
+                    "email": os.getenv("SENDER_EMAIL"),
+                },
+                "to": [{"email": to_email, "name": to_name}],
+                "subject": subject,
+                "htmlContent": html_content,
+            },
+        )
+        response.raise_for_status()
+        print(f"Email envoyé à {to_email}")
+    except Exception as e:
+        print(f"Erreur email : {e}")
+
 
 def envoyer_sms(to, message):
     try:
@@ -63,9 +88,9 @@ Tu réponds toujours en français de manière concise et professionnelle.
 
 {biens_en_texte()}
 
-Quand un client veut visiter un bien, collecte son nom, téléphone, date souhaitée (format JJ/MM/AAAA HHhMM).
+Quand un client veut visiter un bien, collecte son nom, téléphone, email et date souhaitée (format JJ/MM/AAAA HHhMM).
 Une fois toutes les infos collectées, écris exactement sur une ligne :
-RDV_CONFIRME|nom|telephone|date|bien""",
+RDV_CONFIRME|nom|telephone|email|date|bien""",
         messages=conversations[session_id]
     )
 
@@ -74,8 +99,8 @@ RDV_CONFIRME|nom|telephone|date|bien""",
 
     if "RDV_CONFIRME|" in reply:
         parties = reply.split("RDV_CONFIRME|")[1].split("|")
-        if len(parties) == 4:
-            nom, telephone, date, bien = parties
+        if len(parties) == 5:
+            nom, telephone, email, date, bien = parties
 
             if telephone.startswith("06") or telephone.startswith("07"):
                 telephone = "+33" + telephone[1:]
@@ -90,7 +115,35 @@ RDV_CONFIRME|nom|telephone|date|bien""",
                 f"Nouveau RDV : {nom} - {telephone} - {bien} - {date}"
             )
 
-            reply = f"Parfait ! Votre rendez-vous est confirmé ✅\n👤 {nom}\n📞 {telephone}\n📅 {date}\n🏠 {bien}\n\nVous recevrez un SMS de confirmation."
+            envoyer_email(
+                email,
+                nom,
+                f"Confirmation de votre rendez-vous – {bien}",
+                f"""<p>Bonjour {nom},</p>
+<p>Votre rendez-vous de visite est confirmé :</p>
+<ul>
+  <li><strong>Bien :</strong> {bien}</li>
+  <li><strong>Date :</strong> {date}</li>
+  <li><strong>Téléphone :</strong> {telephone}</li>
+</ul>
+<p>À très bientôt,<br>L'équipe de l'agence</p>"""
+            )
+
+            envoyer_email(
+                os.getenv("AGENT_EMAIL"),
+                "Agent",
+                f"Nouveau RDV – {nom} – {bien}",
+                f"""<p>Nouveau rendez-vous confirmé :</p>
+<ul>
+  <li><strong>Client :</strong> {nom}</li>
+  <li><strong>Téléphone :</strong> {telephone}</li>
+  <li><strong>Email :</strong> {email}</li>
+  <li><strong>Bien :</strong> {bien}</li>
+  <li><strong>Date :</strong> {date}</li>
+</ul>"""
+            )
+
+            reply = f"Parfait ! Votre rendez-vous est confirmé ✅\n👤 {nom}\n📞 {telephone}\n📅 {date}\n🏠 {bien}\n\nVous recevrez un SMS et un email de confirmation."
 
     return jsonify({"response": reply})
 
